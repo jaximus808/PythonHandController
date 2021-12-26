@@ -1,5 +1,5 @@
 class UnityCommunicator():
-    def __init__(self,udpIP, InPort, outPort, enableCom=False, supressWarnings=True):
+    def __init__(self,udpIP, InPort, outPort, enableCom=True, supressWarnings=True):
         import socket;
 
         self.udpIP = udpIP;
