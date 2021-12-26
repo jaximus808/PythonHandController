@@ -6,7 +6,6 @@ import struct;
 
 sock = U.UnityCommunicator("127.0.0.1", 8000, 8001, True, True)
 
-
 class Hands:
     
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
@@ -18,7 +17,8 @@ class Hands:
         self.mpHands = mp.solutions.hands
         self.hands = self.mpHands.Hands(mode,maxHands,detectionCon,trackCon);
         self.mpDraw = mp.solutions.drawing_utils
-
+        self.connected = False; 
+        self.clientId = -1; 
 
     def handData(self, img):
         #multi_handedness 
@@ -39,6 +39,8 @@ class Hands:
     def intToBytes(self, data):
         return data.to_bytes(2,"big");
 
+    def CreateJoinData(self):
+        return bytearray(struct.pack("i",-1));
     def CreateData(self, results):
         #if results.multi_hand_landmarks:
             #hand data landmarks is a float
@@ -49,9 +51,9 @@ class Hands:
             #hands?, two hands?, right?, land marks, if hand count 2 then print next values 
             # size should always be 20 vectors (so 60 floats) per hand 
             bytepacket = bytearray(struct.pack("?",True));
-            print(bytepacket);
+            #print(bytepacket);
             bytepacket += bytearray(struct.pack("i",len(results.multi_hand_landmarks)));
-            print(bytepacket);
+            #print(bytepacket);
             bytepacket += bytearray(struct.pack("?",results.multi_handedness == "Right"));
             size = 0;
             for handList in results.multi_hand_landmarks:
@@ -68,6 +70,9 @@ class Hands:
 
 
 def main():
+    t = time.time()
+    timer = 0
+    deltaTime = t;
     dataReader = Hands();
     cap = cv2.VideoCapture(0)
     while True:
@@ -75,12 +80,25 @@ def main():
         success, img = cap.read()
         img,results = dataReader.handData(img)
 
-        data = dataReader.CreateData(results);
-        
-        sock.SendData(data);
-        
-
-
+        if dataReader.connected:
+            data = dataReader.CreateData(results);
+            
+            sock.SendData(data);
+        else:
+            t = time.time()
+            # print(t)
+            # print(deltaTime)
+            timer += t - deltaTime; 
+            deltaTime = t; 
+            if timer > 5:
+                print("cock");
+                timer = 0; 
+                data = dataReader.CreateJoinData();
+                sock.SendData(data); 
+        if dataReader.connected:
+            cv2.putText(img, "connected", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+        else:
+            cv2.putText(img, "connecting", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
         cv2.imshow("Image",img);
         cv2.waitKey(1);  
 if __name__ == "__main__":

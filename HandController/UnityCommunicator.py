@@ -39,6 +39,7 @@ class UnityCommunicator():
             - Error: If user attempts to use this without enabling RX
         :return: returns None on failure or the received string on success
         """
+        print("sup");
         if not self.enableCom: # if RX is not enabled, raise error
             raise ValueError("Attempting to receive data without enabling this setting. Ensure this is enabled from the constructor")
 
