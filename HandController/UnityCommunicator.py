@@ -1,6 +1,16 @@
+from packet import packet
+
+
 class UnityCommunicator():
-    def __init__(self,udpIP, InPort, outPort, enableCom=True, supressWarnings=True):
+
+    def __init__(self,udpIP, InPort, outPort,Hands, enableCom=True, supressWarnings=True):
         import socket;
+        
+        self.hand = Hands;
+
+        self.packetHandler = {
+            0:self.SetClientId
+        }
 
         self.udpIP = udpIP;
         self.udpSendPort = InPort;
@@ -18,6 +28,15 @@ class UnityCommunicator():
             import threading;
             self.outPortThread = threading.Thread(target=self.ReadUdpThreadFunc, daemon=True);
             self.outPortThread.start();
+    
+    def SetClientId(self, _packet):
+        self.hand.clientId = _packet.ReadInt();
+        self.hand.connected = True; 
+        print("Connected with id: " + str(self.hand.clientId) )
+
+    def PacketHandler(self, _packet):
+        packetType = _packet.ReadInt()
+        self.packetHandler[packetType](_packet);
 
     def __del__(self):
         self.CloseSocket();
@@ -39,14 +58,14 @@ class UnityCommunicator():
             - Error: If user attempts to use this without enabling RX
         :return: returns None on failure or the received string on success
         """
-        print("sup");
         if not self.enableCom: # if RX is not enabled, raise error
             raise ValueError("Attempting to receive data without enabling this setting. Ensure this is enabled from the constructor")
 
         data = None
         try:
             data, _ = self.udpSock.recvfrom(1024)
-            data = data.decode('utf-8')
+            data = packet(data);
+            self.PacketHandler(data); 
         except WindowsError as e:
             if e.winerror == 10054: # An error occurs if you try to receive before connecting to other application
                 if not self.suppressWarnings:
@@ -87,6 +106,7 @@ class UnityCommunicator():
         if self.isDataReceived: # if data has been received
             self.isDataReceived = False
             data = self.dataRX
+            print("cockssss")
             self.dataRX = None # Empty receive buffer
 
         return data

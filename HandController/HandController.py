@@ -4,8 +4,6 @@ import time;
 import UnityCommunicator as U;
 import struct;
 
-sock = U.UnityCommunicator("127.0.0.1", 8000, 8001, True, True)
-
 class Hands:
     
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
@@ -46,11 +44,14 @@ class Hands:
             #hand data landmarks is a float
             #print(type( results.multi_hand_landmarks[0].landmark[0].x))
         
+        bytepacket = bytearray(struct.pack("i",self.clientId));
+        #print(bytepacket)
+        bytepacket += bytearray(struct.pack("i",1));
         if results.multi_hand_landmarks:
             #byte array structure:
             #hands?, two hands?, right?, land marks, if hand count 2 then print next values 
             # size should always be 20 vectors (so 60 floats) per hand 
-            bytepacket = bytearray(struct.pack("?",True));
+            bytepacket += bytearray(struct.pack("?",True));
             #print(bytepacket);
             bytepacket += bytearray(struct.pack("i",len(results.multi_hand_landmarks)));
             #print(bytepacket);
@@ -69,11 +70,13 @@ class Hands:
         return bytepacket;
 
 
+dataReader = Hands();
+sock = U.UnityCommunicator("127.0.0.1", 8000, 8001,dataReader, True, True)
+
 def main():
     t = time.time()
     timer = 0
     deltaTime = t;
-    dataReader = Hands();
     cap = cv2.VideoCapture(0)
     while True:
         
