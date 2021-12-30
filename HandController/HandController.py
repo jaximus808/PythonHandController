@@ -13,7 +13,7 @@ class Hands:
         self.trackCon = trackCon;
 
         self.mpHands = mp.solutions.hands
-        self.hands = self.mpHands.Hands(mode,maxHands,detectionCon,trackCon);
+        self.hands = self.mpHands.Hands(mode,maxHands,1,detectionCon,trackCon);
         self.mpDraw = mp.solutions.drawing_utils
         self.connected = False; 
         self.clientId = -1; 
