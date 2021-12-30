@@ -66,12 +66,12 @@ class Hands:
             #print(bytepacket);
             #print(size);
             return bytepacket;
-        bytepacket = struct.pack("?",False);
+        bytepacket += struct.pack("?",False);
         return bytepacket;
 
 
 dataReader = Hands();
-sock = U.UnityCommunicator("127.0.0.1", 8000, 8001,dataReader, True, True)
+sock = U.UnityCommunicator("192.168.1.5", 8000, 8001,dataReader, True, True)
 
 def main():
     t = time.time()
