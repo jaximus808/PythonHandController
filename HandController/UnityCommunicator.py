@@ -46,6 +46,7 @@ class UnityCommunicator():
 
     def SendData(self, data):
         #packetData = bytearray(data.handDetect);
+        #need to change this to actually send to ip
         self.udpSock.sendto(data, (self.udpIP,self.udpSendPort));
 
     def ReceiveData(self):

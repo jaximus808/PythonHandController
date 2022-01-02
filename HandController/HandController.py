@@ -3,7 +3,11 @@ import mediapipe as mp;
 import time;
 import UnityCommunicator as U;
 import struct;
+import tkinter as tk; 
+import WindowRenderer as WindowRender
 
+#need to thread this shit 
+wind = WindowRender.Window(); 
 class Hands:
     
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
@@ -71,39 +75,65 @@ class Hands:
 
 
 dataReader = Hands();
-sock = U.UnityCommunicator("192.168.1.5", 8000, 8001,dataReader, True, True)
+sock = U.UnityCommunicator("", 8000, 8001,dataReader, True, True)
 
 def main():
-    t = time.time()
-    timer = 0
-    deltaTime = t;
-    cap = cv2.VideoCapture(0)
-    while True:
-        
-        success, img = cap.read()
-        img,results = dataReader.handData(img)
+    window_width = 500
+    window_height = 500
 
-        if dataReader.connected:
-            data = dataReader.CreateData(results);
+    
+
+    root = tk.Tk(); 
+    
+
+    screen_width = root.winfo_screenwidth();
+    screen_height = root.winfo_screenheight();
+    
+    center_x = int(screen_width/2 - window_width / 2)
+    center_y = int(screen_height/2 - window_height / 2)
+
+    root.geometry(f'{screen_width}x{screen_height}+{center_x}+{center_y}')
+    
+
+    label = tk.Label(root, text="hello",font=("Helvetica", 14)).place(x = 5, y =2);
+    label2 = tk.Label(root, text="balls",font=("Helvetica", 14));
+    
+
+    
+    root.title("Internet Robot Window");
+    root.mainloop();
+    # t = time.time()
+    # timer = 0
+    # deltaTime = t;
+    # cap = cv2.VideoCapture(0)
+    # while True:
+        
+    #     success, img = cap.read()
+    #     img,results = dataReader.handData(img)
+
+    #     if dataReader.connected:
+    #         data = dataReader.CreateData(results);
             
-            sock.SendData(data);
-        else:
-            t = time.time()
-            # print(t)
-            # print(deltaTime)
-            timer += t - deltaTime; 
-            deltaTime = t; 
-            if timer > 5:
-                print("cock");
-                timer = 0; 
-                data = dataReader.CreateJoinData();
-                sock.SendData(data); 
-        if dataReader.connected:
-            cv2.putText(img, "connected", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
-        else:
-            cv2.putText(img, "connecting", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
-        cv2.imshow("Image",img);
-        cv2.waitKey(1);  
+    #         sock.SendData(data);
+    #     else:
+    #         t = time.time()
+    #         # print(t)
+    #         # print(deltaTime)
+    #         timer += t - deltaTime; 
+    #         deltaTime = t; 
+    #         if timer > 5:
+    #             print("cock");
+    #             timer = 0; 
+    #             data = dataReader.CreateJoinData();
+    #             sock.SendData(data); 
+    #     if dataReader.connected:
+    #         cv2.putText(img, "connected", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+    #     else:
+    #         cv2.putText(img, "connecting", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+    #     cv2.imshow("Image",img);
+    #     cv2.waitKey(1);  
 if __name__ == "__main__":
     # execute only if run as a script
-    main()
+    #main()
+    #wind.homepage()
+    wind.mainloop()
