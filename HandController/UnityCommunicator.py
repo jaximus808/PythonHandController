@@ -1,15 +1,21 @@
 from packet import packet
-
+import struct;
 
 class UnityCommunicator():
 
-    def __init__(self,udpIP, InPort, outPort,Hands, enableCom=True, supressWarnings=True):
+    def __init__(self,udpIP, InPort, outPort,Hands, targetServer,targetPort,enableCom=True, supressWarnings=True):
         import socket;
         
         self.hand = Hands;
 
+        self.targetServer = targetServer; 
+
+        self.targetPort = targetPort; 
+
         self.packetHandler = {
-            0:self.SetClientId
+            0:self.SetClientId,
+            1:self.PingHandle,
+            10: self.FleetServerEnded
         }
 
         self.udpIP = udpIP;
@@ -20,6 +26,8 @@ class UnityCommunicator():
         self.isDataReceived = False;
         self.dataRx = None; 
 
+        self.disconnected = False; 
+
         self.udpSock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # internet protocol, udp (DGRAM) socket
         self.udpSock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allows the address/port to be reused immediately instead of it being stuck in the TIME_WAIT state waiting for late packets to arrive.
         self.udpSock.bind((udpIP, outPort))
@@ -29,10 +37,20 @@ class UnityCommunicator():
             self.outPortThread = threading.Thread(target=self.ReadUdpThreadFunc, daemon=True);
             self.outPortThread.start();
     
+    def FleetServerEnded(self, _packet):
+        self.disconnected = True;
+
     def SetClientId(self, _packet):
         self.hand.clientId = _packet.ReadInt();
         self.hand.connected = True; 
         print("Connected with id: " + str(self.hand.clientId) )
+
+    def PingHandle(self, _packet):
+        bytepacket = bytearray(struct.pack("i",1));
+        bytepacket += bytearray(struct.pack("i",self.hand.clientId));
+        bytepacket += bytearray(struct.pack("i",3));
+        bytepacket += bytearray(struct.pack("?",False));
+        self.SendData(bytepacket); 
 
     def PacketHandler(self, _packet):
         packetType = _packet.ReadInt()
@@ -47,7 +65,7 @@ class UnityCommunicator():
     def SendData(self, data):
         #packetData = bytearray(data.handDetect);
         #need to change this to actually send to ip
-        self.udpSock.sendto(data, (self.udpIP,self.udpSendPort));
+        self.udpSock.sendto(data, (self.targetServer,self.targetPort));
 
     def ReceiveData(self):
         """

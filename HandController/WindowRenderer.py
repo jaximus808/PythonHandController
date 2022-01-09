@@ -1,10 +1,17 @@
 import tkinter as tk
-from tkinter import Canvas, Scrollbar, StringVar, ttk
-from tkinter.constants import LEFT, RIGHT, TOP, VERTICAL, Y, X
+from tkinter import Canvas, Pack, Scrollbar, StringVar, ttk
+from tkinter.constants import CENTER, LEFT, NORMAL, RIGHT, TOP, VERTICAL, Y, X
 import requests
 import json
-LARGEFONT =("Verdana", 35)
+import UnityCommunicator as U;
+import HandController 
+import time;
+import cv2;
+import mediapipe as mp;
 
+MasterServer = "http://192.168.1.4:3000"
+
+LARGEFONT =("Verdana", 35)
 MEDIUMFONT =("Verdana", 25)
 NORMALFONT =("Verdana", 15)
 class Window(tk.Tk):
@@ -57,13 +64,12 @@ class Window(tk.Tk):
     def CheckToken(self):
         x = TxtFileManager.readToken()
         if len(x) > 0:
-            rstatus, rbody = HttpCommunicator.PostRequest("http://127.0.0.1:3000/api/user/accountDetails",{"token":x})
+            rstatus, rbody = HttpCommunicator.PostRequest(MasterServer+"/api/user/accountDetails",{"token":x})
             print(rbody)
             if rbody["error"]:
                 TxtFileManager.setToken("")
             else:
                 return True
-                self.show_frame(Page1)
         return False 
 class StartPage(tk.Frame):
     def SpecialCheck(self,token):
@@ -137,7 +143,7 @@ class StartPage(tk.Frame):
         ttk.Label(self.authFrame, textvariable=self.statusLog, font= NORMALFONT,wraplength=200,justify=LEFT).pack(side=TOP, fill=X)
     def register(self, _username, _email, _pass,_controller):
         rstatus, rToken = HttpCommunicator.PostRequest(
-            "http://127.0.0.1:3000/api/user/createUser", {"username":_username, "email": _email, "password":_pass})
+            MasterServer+"/api/user/createUser", {"username":_username, "email": _email, "password":_pass})
         print("nuts");
         print(rToken);
         if not rToken["error"]:
@@ -154,7 +160,7 @@ class StartPage(tk.Frame):
 
     def login(self, _email, _pass,_controller):
         rstatus, rToken = HttpCommunicator.PostRequest(
-            "http://127.0.0.1:3000/api/user/loginUser", {"email": _email, "password":_pass})
+            MasterServer+"/api/user/loginUser", {"email": _email, "password":_pass})
         print("nuts");
         print(rToken);
         if not rToken["error"]:
@@ -174,34 +180,66 @@ class StartPage(tk.Frame):
 # second window frame page1
 class Page1(tk.Frame):
     def SpecialCheck(self, token):
+        if not token:
+            return StartPage
         return Page1 
     
     def __init__(self, parent, controller):
          
         tk.Frame.__init__(self, parent)
-        label = ttk.Label(self, text ="Page 1", font = LARGEFONT)
-        label.grid(row = 0, column = 4, padx = 10, pady = 10)
-        
+        canvas = tk.Canvas(self)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview);
+        self.authFrame = ttk.Frame(canvas); 
 
-        # button to show frame 2 with text
-        # layout2
-        button1 = ttk.Button(self, text ="StartPage",
-                            command = lambda : controller.show_frame(StartPage))
-     
-        # putting the button in its place
-        # by using grid
-        button1.grid(row = 1, column = 1, padx = 10, pady = 10)
-  
-        # button to show frame 2 with text
-        # layout2
-        button2 = ttk.Button(self, text ="Page 2",
-                            command = lambda : controller.show_frame(Page2))
-     
+        self.authFrame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        ) 
+        canvas.create_window((0, 0), window=self.authFrame, anchor="nw")
+        
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both",expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        ttk.Label(self.authFrame, text ="Robot Connect Page", font = LARGEFONT).pack(side=TOP,fill=X, anchor=CENTER);
+        
+        self.controller = controller
+
+        self.robotIdInput = StringVar();
+        self.robotPasswordInput = StringVar(); 
+        self.statusConnect = StringVar(); 
+        self.statusConnect.set("Status: ")
+
+        ttk.Label(self.authFrame,text="Robot ID", font = NORMALFONT).pack(fill=X, anchor=CENTER);
+        ttk.Entry(self.authFrame, textvariable=self.robotIdInput, font=NORMALFONT).pack(fill=X, anchor=CENTER);
+        ttk.Label(self.authFrame, text="Robot Password", font=NORMALFONT).pack(fill=X, anchor=CENTER);
+        tk.Entry(self.authFrame, textvariable=self.robotPasswordInput, font=NORMALFONT,show="*" ).pack( fill=X, anchor=CENTER);
+        ttk.Label(self.authFrame, textvariable=self.statusConnect, font=NORMALFONT,wraplength=200,justify=LEFT).pack(fill=X, anchor=CENTER)
+        ttk.Button(self.authFrame,text="Connect", 
+        command=lambda:self.connect(self.robotIdInput.get(), self.robotPasswordInput.get())).pack(side=TOP,fill=X, anchor=CENTER)
+
+        ttk.Button(self.authFrame, text ="Log out",
+                            command = lambda : self.logout()).pack(fill=X, anchor=CENTER)
         # putting the button in its place by
         # using grid
-        button2.grid(row = 2, column = 1, padx = 10, pady = 10)
-  
-  
+    def connect(self, handId, handPass):
+        token = TxtFileManager.readToken()
+        rstatus, rBody = HttpCommunicator.PostRequest(MasterServer+"/api/user/connectArm", {"token":token,"id": handId, "password": handPass});
+        print(rBody["message"])
+        self.statusConnect.set("Status: "+ rBody["message"])
+        if rBody["error"]:
+           return; 
+        self.controller.show_frame(Page2);
+        StartHandUDP(rBody["ip"], rBody["port"]); 
+        #will read ip and port and save into ram. 
+        
+
+    def logout(self):
+        TxtFileManager.setToken("");
+        self.controller.show_frame(StartPage)
   
   
 # third window frame page2
@@ -250,3 +288,52 @@ class TxtFileManager:
     def readToken():
         file = open("localstorage.txt","r+");
         return file.read()
+
+def StartHandUDP(targetIp, targetPort):
+    dataReader = HandController.Hands();
+    sock = U.UnityCommunicator("", 8000, 8001,dataReader, targetIp,targetPort,True, True,)
+
+    t = time.time()
+    timer = 0
+    deltaTime = t;
+    cap = cv2.VideoCapture(0)
+    while True:
+        
+        success, img = cap.read()
+        img,results = dataReader.handData(img)
+
+        if dataReader.connected:
+            data = dataReader.CreateData(results);
+            
+            sock.SendData(data);
+        else:
+            t = time.time()
+            # print(t)
+            # print(deltaTime)
+            timer += t - deltaTime; 
+            deltaTime = t; 
+            if timer > 5:
+                print("cock");
+                timer = 0; 
+                data = dataReader.CreateJoinData();
+                sock.SendData(data); 
+        if dataReader.connected:
+            cv2.putText(img, "connected", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+        elif sock.disconnected:
+            cv2.putText(img, "Fleet Server Closed", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+        else:
+            cv2.putText(img, "connecting", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
+        cv2.imshow("Image",img);
+        cv2.waitKey(1);
+        if cv2.getWindowProperty("Image", cv2.WND_PROP_VISIBLE) <1:
+            break  
+        
+    
+
+wind=Window();
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    #main()
+    #wind.homepage()
+    wind.mainloop()

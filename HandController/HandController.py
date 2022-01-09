@@ -4,12 +4,9 @@ import time;
 import UnityCommunicator as U;
 import struct;
 import tkinter as tk; 
-import WindowRenderer as WindowRender
 
 #need to thread this shit 
-wind = WindowRender.Window(); 
 class Hands:
-    
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5, trackCon=0.5):
         self.mode = mode;
         self.maxHands = maxHands;
@@ -42,13 +39,16 @@ class Hands:
         return data.to_bytes(2,"big");
 
     def CreateJoinData(self):
-        return bytearray(struct.pack("i",-1));
+        bytepacket = bytearray(struct.pack("i",0))
+        bytepacket += bytearray(struct.pack("i",-1));
+        return bytepacket
     def CreateData(self, results):
         #if results.multi_hand_landmarks:
             #hand data landmarks is a float
             #print(type( results.multi_hand_landmarks[0].landmark[0].x))
         
-        bytepacket = bytearray(struct.pack("i",self.clientId));
+        bytepacket = bytearray(struct.pack("i",1));
+        bytepacket += bytearray(struct.pack("i",self.clientId));
         #print(bytepacket)
         bytepacket += bytearray(struct.pack("i",1));
         if results.multi_hand_landmarks:
@@ -74,8 +74,6 @@ class Hands:
         return bytepacket;
 
 
-dataReader = Hands();
-sock = U.UnityCommunicator("", 8000, 8001,dataReader, True, True)
 
 def main():
     window_width = 500
@@ -132,8 +130,3 @@ def main():
     #         cv2.putText(img, "connecting", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);
     #     cv2.imshow("Image",img);
     #     cv2.waitKey(1);  
-if __name__ == "__main__":
-    # execute only if run as a script
-    #main()
-    #wind.homepage()
-    wind.mainloop()
