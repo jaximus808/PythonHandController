@@ -233,7 +233,7 @@ class Page1(tk.Frame):
         if rBody["error"]:
            return; 
         self.controller.show_frame(Page2);
-        StartHandUDP(rBody["ip"], rBody["port"]); 
+        StartHandUDP(rBody["ip"], rBody["port"], self.robotIdInput.get()); 
         #will read ip and port and save into ram. 
         
 
@@ -289,7 +289,7 @@ class TxtFileManager:
         file = open("localstorage.txt","r+");
         return file.read()
 
-def StartHandUDP(targetIp, targetPort):
+def StartHandUDP(targetIp, targetPort,targetId):
     dataReader = HandController.Hands();
     sock = U.UnityCommunicator("", 8000, 8001,dataReader, targetIp,targetPort,True, True,)
 
@@ -315,7 +315,7 @@ def StartHandUDP(targetIp, targetPort):
             if timer > 5:
                 print("cock");
                 timer = 0; 
-                data = dataReader.CreateJoinData();
+                data = dataReader.CreateJoinData(targetId);
                 sock.SendData(data); 
         if dataReader.connected:
             cv2.putText(img, "connected", (10,70), cv2.FONT_HERSHEY_PLAIN, 3,(255,0,255), 3);

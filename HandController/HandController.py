@@ -38,9 +38,11 @@ class Hands:
     def intToBytes(self, data):
         return data.to_bytes(2,"big");
 
-    def CreateJoinData(self):
+    def CreateJoinData(self,targetId):
         bytepacket = bytearray(struct.pack("i",0))
         bytepacket += bytearray(struct.pack("i",-1));
+
+        bytepacket += bytearray(struct.pack("i",int(targetId)));
         return bytepacket
     def CreateData(self, results):
         #if results.multi_hand_landmarks:
