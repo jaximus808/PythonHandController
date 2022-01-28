@@ -275,7 +275,7 @@ class HttpCommunicator:
         return r.status_code, json.loads(r.text)
     def PostRequest(address, body):
         r = requests.post(address, data = body);
-        print("cock")
+        
         print(r.text)
 
         return r.status_code, json.loads(r.text)
@@ -313,7 +313,6 @@ def StartHandUDP(targetIp, targetPort,targetId):
             timer += t - deltaTime; 
             deltaTime = t; 
             if timer > 5:
-                print("cock");
                 timer = 0; 
                 data = dataReader.CreateJoinData(targetId);
                 sock.SendData(data); 
