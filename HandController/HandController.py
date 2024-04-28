@@ -1,9 +1,12 @@
-import cv2;
-import mediapipe as mp;
-import time;
-import UnityCommunicator as U;
-import struct;
-import tkinter as tk; 
+import struct
+import time
+import tkinter as tk
+
+import cv2
+import mediapipe as mp
+
+import UnityCommunicator as U
+
 
 #need to thread this shit 
 class Hands:
